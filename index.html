@@ -48,7 +48,7 @@
             text-align: left;
         }
 
-        input[type="text"], textarea {
+        input[type="text"], textarea, select {
             width: 100%;
             padding: 12px;
             margin-bottom: 20px;
@@ -59,7 +59,7 @@
             transition: border-color 0.3s ease;
         }
 
-        input[type="text"]:focus, textarea:focus {
+        input[type="text"]:focus, textarea:focus, select:focus {
             border-color: #667eea;
             outline: none;
         }
@@ -128,6 +128,10 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -137,8 +141,24 @@
             <label for="username">Username:</label>
             <input type="text" id="username" name="username" placeholder="Enter your username" required>
 
-            <label for="email">Email:</label>
-            <input type="text" id="email" name="email" placeholder="Enter your email" required>
+            <label for="discordID">Discord ID:</label>
+            <input type="text" id="discordID" name="discordID" placeholder="Enter your Discord ID" required>
+
+            <label for="banReason">Ban Reason:</label>
+            <input type="text" id="banReason" name="banReason" placeholder="Why were you banned?" required>
+
+            <label for="appealCategory">Appeal Category:</label>
+            <select id="appealCategory" name="appealCategory" required>
+                <option value="" disabled selected>Select a category</option>
+                <option value="mistake">I was banned by mistake</option>
+                <option value="behavior">I have improved my behavior</option>
+                <option value="other">Other</option>
+            </select>
+
+            <div id="otherCategoryContainer" class="hidden">
+                <label for="otherCategory">Specify Category:</label>
+                <input type="text" id="otherCategory" name="otherCategory" placeholder="Enter your category">
+            </div>
 
             <label for="reason">Reason for Appeal:</label>
             <textarea id="reason" name="reason" placeholder="Explain why you should be unbanned" required></textarea>
@@ -166,11 +186,24 @@
                 document.getElementById('errorMessage').textContent = 'Failed to load form. Please refresh the page.';
             });
 
+        // Show/hide the "Other" category textbox
+        document.getElementById('appealCategory').addEventListener('change', function () {
+            const otherCategoryContainer = document.getElementById('otherCategoryContainer');
+            if (this.value === 'other') {
+                otherCategoryContainer.classList.remove('hidden');
+            } else {
+                otherCategoryContainer.classList.add('hidden');
+            }
+        });
+
         document.getElementById('appealForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
             const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
+            const discordID = document.getElementById('discordID').value;
+            const banReason = document.getElementById('banReason').value;
+            const appealCategory = document.getElementById('appealCategory').value;
+            const otherCategory = document.getElementById('otherCategory').value;
             const reason = document.getElementById('reason').value;
 
             if (!webhookURL) {
@@ -184,8 +217,10 @@
             document.getElementById('successMessage').style.display = 'none';
             document.getElementById('errorMessage').style.display = 'none';
 
+            // Prepare the data to send
+            const category = appealCategory === 'other' ? otherCategory : appealCategory;
             const data = {
-                content: `**New Ban Appeal**\n**Username:** ${username}\n**Email:** ${email}\n**Reason:** ${reason}`
+                content: `**New Ban Appeal**\n**Username:** ${username}\n**Discord ID:** ${discordID}\n**Ban Reason:** ${banReason}\n**Appeal Category:** ${category}\n**Reason:** ${reason}`
             };
 
             fetch(webhookURL, {
@@ -199,6 +234,7 @@
                 if (response.ok) {
                     document.getElementById('successMessage').style.display = 'block';
                     document.getElementById('appealForm').reset();
+                    document.getElementById('otherCategoryContainer').classList.add('hidden');
                 } else {
                     document.getElementById('errorMessage').style.display = 'block';
                 }
